@@ -1,0 +1,2 @@
+Row;Identifier;Task Group;Task;Responsibility;Remarks;CAS Package;Package Code;Delivery by;Ordering Information
+201;2023-Q2;v3 2023;TO_HANA_SA_1.0.08;C1 - Database Management SAP HANA - Streaming Analytics Option;Provision of Disaster Recovery (Streaming Analytics option nodes);Optional Services;Provisioning of identical number of nodes at a secondary site to mirror primary site using provisioning tool.;not applicable;n/a;H;service request as assisted service required - validation and determination of applicable delivery scope required
