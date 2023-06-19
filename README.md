@@ -10,6 +10,8 @@ source PythonQA_env/bin/activate
 **Install the Python packages required for the project**
 pip3 install -r requirements.txt
 
+**When finished, deactivate the python environment**
+deactivate
 
 
 
