@@ -1,13 +1,4 @@
-This is what I expect from you:
-1. Access a CSV data that I will paste in the prompt. The CSV is comma-separated (;)
-2. The CSV Data contains various columns : Row, Last-Update, RR Version, Identifier, Task Group, Task, Responsibility, Remarks, CAS Package, Package Code, Delivery by, and Ordering Information.
-3. Understand that the Task Group column contains the main category of the task, the Task column contains the description of the individual task, the CAS Package column contains optional Cloud Architecture Services, and the Ordering Information column describes how customers can request these optional services.
-4. Use data from columns Task, Responsibility and Remarks to create the questions for a series of Q&A pairs for a chatbot, primarily focusing on the Task and Responsibility columns, but also including all the information from the other columns in the answers.
-5. For each answer, include always the Identifier, Task Group, CAS Package, Package Code, Delivery by, Ordering Information, Last-Update, and RR Version columns.
-6. Not include the Task Group column in the questions, as this is internal information not known to customers.
-7. For each Q&A pair, generate a plain text output with 2 lines of text. First line of text will contain the question and will start with "Q:". The second line will contain all the answer and will start with "A:".
- 8. Separate each Q&A pair adding 2 blank lines.
- 9. Replace any HEC occurrence with SAP ECS.
- 10. Not number the Q&A pairs, but instead label them with "Q:" and "A:".
-11. End every answer with the Last-Update and RR Version
-12. Generate 2 questions per each row of the CSV data
+Given a semi-colon (;) separated CSV data with the following columns: Updated, Version, Identifier, TaskGroup, Task, Responsibility, Remarks, CASPackage, PackageCode, OrderingInformation. If the Responsibility is "Excluded Tasks", the Task is customer's responsibility as per OrderingInformation. If Responsibility indicates "Optional Service" or "Additional Service", the Task can be requested to SAP. 
+Generate two Q&A pairs per CSV row using natural language to simulate how a human person will ask these questions. Questions should primarily focus on Task and Responsibility. Answers should include Identifier, TaskGroup, CASPackage, PackageCode, OrderingInformation, Updated, and Version, but exclude TaskGroup from questions. Start each question with "Q:" and each answer with "A:". 
+Separate each pair with two blank lines, replace "HEC" with "SAP ECS", and end every answer with the Updated and Version details. 
+

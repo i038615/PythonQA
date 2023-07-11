@@ -1,0 +1,5 @@
+Q: What is the responsibility for Create and maintain OS users and groups?
+A: INFRA_1.6.01 - Responsibility for Create and maintain OS users and groups is Standard Services - Service provider access only, no privileged access to operating system by customer. Updated 2023-Q2, v3 2023. 
+
+Q: Is there specific ordering information for Create and maintain OS users and groups?
+A: INFRA_1.6.01 - Ordering information for Create and maintain OS users and groups is auto-deliverable, no request required to SAP ECS. Updated 2023-Q2, v3 2023.

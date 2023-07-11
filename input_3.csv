@@ -1,2 +1,3 @@
 ﻿Updated;Version;Identifier;TaskGroup;Task;Responsibility;Remarks;CASPackage;PackageCode;OrderingInformation
 2023-Q2;v3 2023;INFRA_1.6.01;B - Managed Infrastructure - Operating System;Create and maintain OS users and groups;Standard Services;Service provider access only, no privileged access to operating system by customer.;not applicable;n/a;auto-deliverable, no request required
+2023-Q2;v3 2023;INFRA_1.6.04;B - Managed Infrastructure - Operating System;Inform customer regarding security incidents;Standard Services;;not applicable;n/a;auto-deliverable, no request required

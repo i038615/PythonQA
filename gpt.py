@@ -1,85 +1,133 @@
 import os
 import openai
 import pandas as pd
+import logging
+import tiktoken
+import argparse
+import json
+from typing import Tuple
 
-def read_api_key():
-    api_key_file = os.path.expanduser("~/.apikey.secret")
-    with open(api_key_file, "r") as file:
-        return file.read().strip()
 
-def read_csv(file_path):
-    return pd.read_csv(file_path, delimiter=';')
+class OpenAIAPI:
+    """Handles communication with the OpenAI API."""
 
-def call_openai_api(row, instructions, model='text-davinci-003'):
-    prompt = f"{instructions}\nCSV Data: {row}\n"
-    response = openai.Completion.create(
-        engine=model,
-        prompt=prompt,
-        max_tokens=200,
-        temperature=0.6
-    )
-    return response.choices[0].text.strip()
+    def __init__(self, model: str):
+        self.model = model
+        self.api_key = self._load_api_key()
+        self.encoding = tiktoken.get_encoding("cl100k_base")
 
-def generate_qa_pairs(df, instructions):
+    def _load_api_key(self) -> str:
+        try:
+            api_key_file = os.path.expanduser("~/.apikey.secret")
+            with open(api_key_file, "r") as file:
+                return file.read().strip()
+        except Exception as e:
+            logging.error("Failed to read API key: %s", e)
+            raise
+
+    def call(self, row: str, instructions: str) -> str:
+        prompt = f"{instructions}\nCSV Data: {row}\n"
+        response = openai.Completion.create(
+            engine=self.model,
+            prompt=prompt,
+            max_tokens=200,
+            temperature=0.6
+        )
+        return response.choices[0].text.strip()
+
+    def get_tokens(self, text: str) -> int:
+        return len(self.encoding.encode(text))
+
+
+class CSVReader:
+    """Loads and processes CSV data."""
+
+    def __init__(self, file_path: str):
+        self.file_path = file_path
+        self.data = self._load_csv()
+
+    def _load_csv(self) -> pd.DataFrame:
+        try:
+            return pd.read_csv(self.file_path, delimiter=';')
+        except Exception as e:
+            logging.error("Failed to read CSV file: %s", e)
+            raise
+
+
+class Prompt:
+    """Loads and processes the prompt."""
+
+    def __init__(self, file_path: str):
+        self.file_path = file_path
+        self.text, self.tokens = self._load_prompt()
+
+    def _load_prompt(self) -> Tuple[str, int]:
+        try:
+            encoding = tiktoken.get_encoding("cl100k_base")
+            with open(self.file_path, "r") as file:
+                prompt = file.read()
+                return prompt, len(encoding.encode(prompt))
+        except Exception as e:
+            logging.error("Failed to read prompt: %s", e)
+            raise
+
+
+def generate_qa_pairs(df: pd.DataFrame, instructions: str, format: str, api: OpenAIAPI) -> int:
+    """Generate Q&A pairs and save to file in specified format."""
+    total_tokens = 0
+    qa_pairs = []
     for _, row in df.iterrows():
         row_str = '; '.join(str(item) for item in row)
-        for _ in range(2):  # generate two questions per row
-            output = call_openai_api(row_str, instructions)
-            print(f"{output}\n")
+        output = api.call(row_str, instructions)
+        qa_pairs.append(output)
+        total_tokens += api.get_tokens(row_str + instructions + output)
+        print(output)
 
-def main():
-    api_key = read_api_key()
-    openai.api_key = api_key
+    if format.lower() == 'json':
+        with open('output.json', 'w') as f:
+            json.dump(qa_pairs, f)
+    else:  # default to TXT
+        with open('output.txt', 'w') as f:
+            for pair in qa_pairs:
+                f.write("%s\n" % pair)
 
-    df = read_csv('input.csv')
-    instructions = """
-    This is what I expect from you:
-    
-    1. Access a CSV data that I will paste in the prompt. The CSV is comma-separated (;).
-    
-    2. The CSV Data contains various columns: 
-    - Row: The row identifier. This value must not appear in the question nor the answer
-    - Last-Update: The date of the last update.
-    - RR Version: The version of the RR.
-    - Identifier: The unique identifier.
-    - Task: The description of the individual task.
-    - Responsibility: Who is responsible of this task, if it's a standard service included in the contract or it's an additional service, etc...
-    - Remarks: Additional remarks or notes for the task
-    - CAS Package: Optional Cloud Architecture Services package that cover the execution of the task
-    - Package Code: The code associated with the CAS package.
-    - Delivery by: Who will deliver this task
-    - Ordering Information: Information on how customers can request optional services.
-    
-    3. Use data from the Task, Responsibility, and Remarks columns to generate a series of Q&A pairs for a chatbot. Focus on the Task and Responsibility, but include all information from other columns in the answers.
-    
-    4. Each answer should include the data of the following columns: 
-    - Identifier: [Identifier]
-    - Task Group: [Task Group]
-    - CAS Package: [CAS Package]
-    - Package Code: [Package Code]
-    - Delivery by: [Delivery by]
-    - Ordering Information: [Ordering Information]
-    - Last-Update: [Last-Update]
-    - RR Version: [RR Version]
-    
-    5. Exclude the Task Group column in the questions, as it's internal information not known to customers.
+    return total_tokens
 
-        6. Generate a plain text output for each Q&A pair, consisting of two lines:
-    - The first line should start with "Q:" and contain the question.
-    - The second line should start with "A:" and contain the answer.
 
-    7. Separate each Q&A pair by adding 2 blank lines.
 
-    8. Replace any occurrence of "HEC" with "SAP ECS".
+def parse_args() -> argparse.Namespace:
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--format", help="Output format (TXT or JSON), default is TXT", default='txt')
+    parser.add_argument("--model", help="The model to be used, default is text-davinci-003", default='text-davinci-003')
+    return parser.parse_args()
 
-    9. Do not number the Q&A pairs; instead, label them with "Q:" and "A:".
 
-    10. End every answer with the Last-Update and RR Version.
+def print_initialization(api_key: str, model: str, format: str, df: pd.DataFrame, prompt: str, prompt_tokens: int) -> None:
+    """Print initialization progress."""
+    print("Initialization:")
+    print(f"API key loaded: {'Yes' if api_key else 'No'}")
+    print(f"Model selected: {model}")
+    print(f"Output format selected: {format.upper()}")
+    print(f"CSV file loaded: {'Yes' if not df.empty else 'No'}")
+    print(f"Prompt loaded: {'Yes' if prompt else 'No'}")
+    print(f"Prompt tokens: {prompt_tokens}")
 
-    11. Generate 2 questions per each row of the CSV data.
-    """
 
-    generate_qa_pairs(df, instructions)
+def main() -> None:
+    args = parse_args()
+
+    api = OpenAIAPI(args.model)
+    openai.api_key = api.api_key
+
+    reader = CSVReader('input.csv')
+    prompt = Prompt('prompt.txt')
+
+    print_initialization(api.api_key, args.model, args.format, reader.data, prompt.text, prompt.tokens)
+
+    total_tokens = generate_qa_pairs(reader.data, prompt.text, args.format, api)
+    print(f"Total tokens used: {total_tokens}")
+
 
 if __name__ == "__main__":
     main()
