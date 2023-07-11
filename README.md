@@ -14,4 +14,5 @@ pip3 install -r requirements.txt
 deactivate
 
 
+![Python_QA](https://github.com/i038615/PythonQA/assets/44123175/6a86059a-db60-447f-853a-23ca580463cc)
 
