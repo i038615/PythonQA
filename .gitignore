@@ -1,2 +1,5 @@
 #ignore the python env directory
 PythonQA_env/
+
+#ignore the MacOsx Desktop properties file
+.DS_Store
